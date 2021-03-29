@@ -6,21 +6,21 @@
 class ForzaDataParser
 {
     /*
-     ## Class variables are the specification of the format and the names of all
-     ## the properties found in the data packet.
+     Class variables are the specification of the format and the names of all
+     the properties found in the data packet.
 
-     ## Format string that allows unpack to process the data bytestream
-     ## for the V1 format called 'sled'
+     Format string that allows unpack to process the data bytestream
+     for the V1 format called 'sled'
      */
-    //                    '<iIfffffffffffffffffffffffffffffffffffffffffffffffffffiiiii'
-    private $sled_format = 'iIfffffffffffffffffffffffffffffffffffffffffffffffffffiiiii';
+    //<iIfffffffffffffffffffffffffffffffffffffffffffffffffffiiiii
+    private $sled_format = 'L2/f51/l5';
 
     //## Format string for the V2 format called 'car dash'
     //                    '<iIfffffffffffffffffffffffffffffffffffffffffffffffffffiiiiifffffffffffffffffHBBBBBBbbb'
-    private $dash_format = 'iIfffffffffffffffffffffffffffffffffffffffffffffffffffiiiiifffffffffffffffffSCCCCCCccc';
+    private $dash_format = 'L2/f51/l5/f17/S/C6/c3';
 
-    //## Names of the properties in the order they're featured in the packet:
-    private $sled_props = [
+    //Names of the properties in the order they're featured in the packet:
+    private array $sled_props = [
         'is_race_on',
         'timestamp_ms',
         'engine_max_rpm',
@@ -82,7 +82,7 @@ class ForzaDataParser
     ];
 
     //## The additional props added in the 'car dash' format
-    private $dash_props = [
+    private array $dash_props = [
         'position_x',
         'position_y',
         'position_z',
@@ -114,24 +114,33 @@ class ForzaDataParser
 
     private $packet_format;
 
-    function __construct($data, $packet_format = 'dash')
+    public function __construct($data, $packet_format = 'dash')
     {
-        $this->dash_format = $packet_format;
+        $this->packet_format = $packet_format;
 
-        switch ($this->dash_format) {
+        switch ($this->packet_format) {
             case 'sled':
-                foreach ($this->zip($this->sled_props,
+                $unpacked_data = unpack($this->sled_format, $data);
+                print_r($unpacked_data);
+                echo unpack('H*'. $data)."\n";
+                //$patched_data = array_slice($unpacked_data, 0, 232, array_slice($unpacked_data, 244, 323));
+                $combined_data = $this->zip($this->sled_props, $unpacked_data);
+                //print_r($combined_data);
+                /*foreach (array_combine($this->sled_props,
                     unpack($this->sled_format, $data)) as $prop_name => $prop_value) {
                     $this->$prop_name = $prop_value;
-                }
+                    }*/
                 break;
 
             case 'fh4':
-                $patched_data = array_slice($data, 0, 232, array_slice($data, 244, 323));
-                foreach ($this->zip(array_merge($this->sled_props, $this->dash_props),
-                    unpack($this->dash_format, $patched_data)) as $prop_name => $prop_value) {
-                    $this->$prop_name = $prop_value;
-                }
+                $unpacked_data = unpack($this->dash_format, $data);
+                //$patched_data = array_slice($unpacked_data, 0, 232, array_slice($unpacked_data, 244, 323));
+                print_r($unpacked_data);
+                $combined_data = $this->zip(array_merge($this->sled_props, $this->dash_props), $unpacked_data);
+                //print_r($combined_data);
+                /*foreach ($combined_data as $prop_name => $prop_value) {
+                $this->$prop_name = $prop_value;
+                }*/
                 break;
         }
 
@@ -139,6 +148,10 @@ class ForzaDataParser
 
     public function to_list($attributes = null)
     {
+        if (!property_exists($this->is_race_on)) {
+            return array('No Data');
+        }
+
         $return = array();
         if (is_array($attributes)) {
             foreach ($attributes as $prop_name) {
@@ -154,19 +167,41 @@ class ForzaDataParser
         return $return;
     }
 
+    /*
+     * This is a Python/Ruby style zip()
+     *
+     * zip(array $a1, array $a2, ... array $an, [bool $python=true])
+     *
+     * The last argument is an optional bool that determines the how the function
+     * handles when the array arguments are different in length
+     *
+     * By default, it does it the Python way, that is, the returned array will
+     * be truncated to the length of the shortest argument
+     *
+     * If set to FALSE, it does it the Ruby way, and NULL values are used to
+     * fill the undefined entries
+     *
+     */
     private function zip()
     {
-        $params = func_get_args();
-        if (count($params) === 1) { // this case could be probably cleaner
-            // single iterable passed
-            $result = array();
-            foreach ($params[0] as $item) {
-                $result[] = array($item);
-            }
-            return $result;
+        $args = func_get_args();
+
+        $ruby = array_pop($args);
+        if (is_array($ruby)) {
+            $args[] = $ruby;
         }
-        $result = call_user_func_array('array_map', array_merge(array(null), $params));
-        $length = min(array_map('count', $params));
-        return array_slice($result, 0, $length);
+
+        $counts = array_map('count', $args);
+        $count = ($ruby) ? min($counts) : max($counts);
+        $zipped = array();
+
+        for ($i = 0; $i < $count; $i++) {
+            for ($j = 0; $j < count($args); $j++) {
+                $val = (isset($args[$j][$i])) ? $args[$j][$i] : null;
+                $zipped[$i][$j] = $val;
+            }
+        }
+        return $zipped;
     }
 }
+

@@ -26,17 +26,15 @@ echo "Socket bind OK \n";
 
 //Do some communication, this loop can handle multiple clients
 while (1) {
-    echo "Waiting for data ... \n";
+    //echo "Waiting for data ... \n";
 
     //Receive some data
-    $r = socket_recvfrom($sock, $buf, 512, 0, $remote_ip, $remote_port);
-    if (strpos($buf, 'Waiting') !== false) {
-        echo "$remote_ip : $remote_port -- " . $buf;
+    $r = socket_recvfrom($sock, $buf, 1024, 0, $remote_ip, $remote_port);
+    echo "$remote_ip : $remote_port -- "/* . $buf*/;
 
-        $fdp = new ForzaDataParser($buf, 'fh4');
-        print_r($fdp->to_list());
+    $fdp = new ForzaDataParser($buf, 'sled');
+    //print_r($fdp->to_list());
 
-    }
 
     //Send back the data to the client
 //	socket_sendto($sock, "OK " . $buf , 100 , 0 , $remote_ip , $remote_port);
