@@ -20,7 +20,7 @@ class ForzaDataParser
     private $dash_format = 'L2d/f51e/l5f/f17g/Sh/C6i/c3j';
 
     //Names of the properties in the order they're featured in the packet:
-    private array $sled_props = [
+    private static array $sled_props = [
         'is_race_on',
         'timestamp_ms',
         'engine_max_rpm',
@@ -82,7 +82,7 @@ class ForzaDataParser
     ];
 
     //## The additional props added in the 'car dash' format
-    private array $dash_props = [
+    private static array $dash_props = [
         'position_x',
         'position_y',
         'position_z',
@@ -121,22 +121,19 @@ class ForzaDataParser
         switch ($this->packet_format) {
             case 'sled':
                 $unpacked_data = unpack($this->sled_format, $data);
-                $combined_data = $this->zip($this->sled_props, $unpacked_data);
-                print_r($combined_data);
-                /*foreach (array_combine($this->sled_props,
-                    unpack($this->sled_format, $data)) as $prop_name => $prop_value) {
+                $combined_data = $this->zip(self::$sled_props, $unpacked_data);
+                foreach ($combined_data as $prop_name => $prop_value) {
                     $this->$prop_name = $prop_value;
-                    }*/
+                }
                 break;
 
             case 'fh4':
                 $unpacked_data = array_values(unpack($this->dash_format, $data));
                 $patched_data = array_merge(array_slice($unpacked_data, 0, 232), array_slice($unpacked_data, 244, 323));
-                $combined_data = array_combine(array_merge($this->sled_props, $this->dash_props), $patched_data);
-                print_r($combined_data);
-                /*foreach ($combined_data as $prop_name => $prop_value) {
-                $this->$prop_name = $prop_value;
-                }*/
+                $combined_data = array_combine(array_merge(self::$sled_props, self::$dash_props), $patched_data);
+                foreach ($combined_data as $prop_name => $prop_value) {
+                    $this->$prop_name = $prop_value;
+                }
                 break;
         }
 
@@ -156,11 +153,34 @@ class ForzaDataParser
             return $return;
         }
 
-        foreach (array_merge($this->sled_props, $this->dash_props) as $prop_name) {
+        foreach (array_merge(self::$sled_props, self::$dash_props) as $prop_name) {
             $return[$prop_name] = $this->$prop_name;
         }
 
         return $return;
+    }
+
+    public static function csv_header()
+    {
+        return implode(',', array_merge(self::$sled_props, self::$dash_props));
+    }
+
+    public function to_csv($file = 'forza.csv', $attributes = null)
+    {
+
+        $row = array();
+        if (is_array($attributes)) {
+            foreach ($attributes as $prop_name) {
+                $row[$prop_name] = $this->$prop_name;
+            }
+            return $row;
+        }
+
+        foreach (array_merge(self::$sled_props, self::$dash_props) as $prop_name) {
+            $row[$prop_name] = $this->$prop_name;
+        }
+        return implode(',', $row);
+        
     }
 
     /*

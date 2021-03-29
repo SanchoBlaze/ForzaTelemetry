@@ -24,6 +24,8 @@ if (!socket_bind($sock, "0.0.0.0", 20127)) {
 
 echo "Socket bind OK \n";
 
+file_put_contents("forza.csv", ForzaDataParser::csv_header());
+
 //Do some communication, this loop can handle multiple clients
 while (1) {
     //echo "Waiting for data ... \n";
@@ -33,6 +35,7 @@ while (1) {
     echo "$remote_ip : $remote_port -- "/* . $buf*/;
 
     $fdp = new ForzaDataParser($buf, 'fh4');
+    file_put_contents("forza.csv", $fdp->to_csv(), FILE_APPEND);
     //print_r($fdp->to_list());
 
 
