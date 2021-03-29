@@ -32,7 +32,7 @@ while (1) {
     $r = socket_recvfrom($sock, $buf, 1024, 0, $remote_ip, $remote_port);
     echo "$remote_ip : $remote_port -- "/* . $buf*/;
 
-    $fdp = new ForzaDataParser($buf, 'sled');
+    $fdp = new ForzaDataParser($buf, 'fh4');
     //print_r($fdp->to_list());
 
 

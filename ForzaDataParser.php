@@ -13,11 +13,11 @@ class ForzaDataParser
      for the V1 format called 'sled'
      */
     //<iIfffffffffffffffffffffffffffffffffffffffffffffffffffiiiii
-    private $sled_format = 'L2/f51/l5';
+    private $sled_format = 'L2a/f51b/l5c';
 
     //## Format string for the V2 format called 'car dash'
     //                    '<iIfffffffffffffffffffffffffffffffffffffffffffffffffffiiiiifffffffffffffffffHBBBBBBbbb'
-    private $dash_format = 'L2/f51/l5/f17/S/C6/c3';
+    private $dash_format = 'L2d/f51e/l5f/f17g/Sh/C6i/c3j';
 
     //Names of the properties in the order they're featured in the packet:
     private array $sled_props = [
@@ -121,11 +121,8 @@ class ForzaDataParser
         switch ($this->packet_format) {
             case 'sled':
                 $unpacked_data = unpack($this->sled_format, $data);
-                print_r($unpacked_data);
-                echo unpack('H*'. $data)."\n";
-                //$patched_data = array_slice($unpacked_data, 0, 232, array_slice($unpacked_data, 244, 323));
                 $combined_data = $this->zip($this->sled_props, $unpacked_data);
-                //print_r($combined_data);
+                print_r($combined_data);
                 /*foreach (array_combine($this->sled_props,
                     unpack($this->sled_format, $data)) as $prop_name => $prop_value) {
                     $this->$prop_name = $prop_value;
@@ -133,11 +130,10 @@ class ForzaDataParser
                 break;
 
             case 'fh4':
-                $unpacked_data = unpack($this->dash_format, $data);
-                //$patched_data = array_slice($unpacked_data, 0, 232, array_slice($unpacked_data, 244, 323));
-                print_r($unpacked_data);
-                $combined_data = $this->zip(array_merge($this->sled_props, $this->dash_props), $unpacked_data);
-                //print_r($combined_data);
+                $unpacked_data = array_values(unpack($this->dash_format, $data));
+                $patched_data = array_merge(array_slice($unpacked_data, 0, 232), array_slice($unpacked_data, 244, 323));
+                $combined_data = array_combine(array_merge($this->sled_props, $this->dash_props), $patched_data);
+                print_r($combined_data);
                 /*foreach ($combined_data as $prop_name => $prop_value) {
                 $this->$prop_name = $prop_value;
                 }*/
