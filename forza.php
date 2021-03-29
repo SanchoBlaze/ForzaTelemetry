@@ -32,7 +32,7 @@ while (1) {
 
     //Receive some data
     $r = socket_recvfrom($sock, $buf, 1024, 0, $remote_ip, $remote_port);
-    echo "$remote_ip : $remote_port -- "/* . $buf*/;
+    echo "$remote_ip : $remote_port\n";
 
     $fdp = new ForzaDataParser($buf, 'fh4');
     file_put_contents("forza.csv", $fdp->to_csv(), FILE_APPEND);

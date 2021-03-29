@@ -162,7 +162,7 @@ class ForzaDataParser
 
     public static function csv_header()
     {
-        return implode(',', array_merge(self::$sled_props, self::$dash_props));
+        return implode(',', array_merge(self::$sled_props, self::$dash_props)) . "\n";
     }
 
     public function to_csv($file = 'forza.csv', $attributes = null)
@@ -173,14 +173,14 @@ class ForzaDataParser
             foreach ($attributes as $prop_name) {
                 $row[$prop_name] = $this->$prop_name;
             }
-            return $row;
+            return implode(',', $row) . "\n";
         }
 
         foreach (array_merge(self::$sled_props, self::$dash_props) as $prop_name) {
             $row[$prop_name] = $this->$prop_name;
         }
-        return implode(',', $row);
-        
+        return implode(',', $row) . "\n";
+
     }
 
     /*
